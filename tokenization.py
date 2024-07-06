@@ -39,7 +39,7 @@ def normalize_labels(labels):
 def denormalize_label(label, min_label, max_label):
     return label * (max_label - min_label) + min_label
 
-def train(sentences, labels, learning_rate=0.0001, max_iterations=1000):
+def train(sentences, labels, learning_rate=0.00001, max_iterations=1000, batch_size=32):
     sentences = tokenize(sentences)
     labels, min_label, max_label = normalize_labels(np.array(labels))
     num_features = sentences.shape[1]
@@ -49,21 +49,57 @@ def train(sentences, labels, learning_rate=0.0001, max_iterations=1000):
     sentences = scaler.fit_transform(sentences)
 
     # Initialize weights and bias
-    weights = np.random.uniform(0, 1, num_features)
-    bias = random.uniform(0, 1)
+    weights = np.random.uniform(-0.1, 0.1, num_features)
+    bias = random.uniform(-0.1, 0.1)
+
+    # Adam optimizer parameters
+    beta1, beta2 = 0.9, 0.999
+    epsilon = 1e-8
+    m_w, v_w = np.zeros_like(weights), np.zeros_like(weights)
+    m_b, v_b = 0, 0
+    t = 0
 
     for iteration in range(max_iterations):
         total_error = 0
-        outputs = np.dot(sentences, weights) + bias
-        errors = labels - outputs
 
-        total_error = np.sum(errors**2)
+        # Shuffle data
+        indices = np.arange(len(sentences))
+        np.random.shuffle(indices)
+        sentences = sentences[indices]
+        labels = labels[indices]
 
-        # Update weights and bias with gradient clipping
-        gradients = np.dot(errors, sentences)
-        gradients = np.clip(gradients, -1, 1)
-        weights += learning_rate * gradients
-        bias += learning_rate * np.sum(errors)
+        for start in range(0, len(sentences), batch_size):
+            end = start + batch_size
+            batch_sentences = sentences[start:end]
+            batch_labels = labels[start:end]
+
+            outputs = np.dot(batch_sentences, weights) + bias
+            errors = batch_labels - outputs
+
+            total_error += np.sum(errors**2)
+
+            # Compute gradients
+            gradients_w = -2 * np.dot(batch_sentences.T, errors) / batch_size
+            gradients_b = -2 * np.sum(errors) / batch_size
+
+            # Adam optimizer update
+            t += 1
+            m_w = beta1 * m_w + (1 - beta1) * gradients_w
+            v_w = beta2 * v_w + (1 - beta2) * (gradients_w**2)
+            m_w_hat = m_w / (1 - beta1**t)
+            v_w_hat = v_w / (1 - beta2**t)
+
+            m_b = beta1 * m_b + (1 - beta1) * gradients_b
+            v_b = beta2 * v_b + (1 - beta2) * (gradients_b**2)
+            m_b_hat = m_b / (1 - beta1**t)
+            v_b_hat = v_b / (1 - beta2**t)
+
+            weights -= learning_rate * m_w_hat / (np.sqrt(v_w_hat) + epsilon)
+            bias -= learning_rate * m_b_hat / (np.sqrt(v_b_hat) + epsilon)
+
+        # Add L2 regularization term
+        regularization_term = 0.01 * np.sum(weights**2)
+        total_error += regularization_term
 
         if np.isnan(total_error):
             print("Encountered NaN values in total error. Stopping training.")
