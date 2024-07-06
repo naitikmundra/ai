@@ -39,7 +39,7 @@ def normalize_labels(labels):
 def denormalize_label(label, min_label, max_label):
     return label * (max_label - min_label) + min_label
 
-def train(sentences, labels, learning_rate=0.00001, max_iterations=1000, batch_size=32):
+def train(sentences, labels, learning_rate=0.00001, max_iterations=1000, batch_size=32, patience=10):
     sentences = tokenize(sentences)
     labels, min_label, max_label = normalize_labels(np.array(labels))
     num_features = sentences.shape[1]
@@ -58,6 +58,9 @@ def train(sentences, labels, learning_rate=0.00001, max_iterations=1000, batch_s
     m_w, v_w = np.zeros_like(weights), np.zeros_like(weights)
     m_b, v_b = 0, 0
     t = 0
+
+    best_error = float('inf')
+    patience_counter = 0
 
     for iteration in range(max_iterations):
         total_error = 0
@@ -103,6 +106,16 @@ def train(sentences, labels, learning_rate=0.00001, max_iterations=1000, batch_s
 
         if np.isnan(total_error):
             print("Encountered NaN values in total error. Stopping training.")
+            break
+
+        if total_error < best_error:
+            best_error = total_error
+            patience_counter = 0
+        else:
+            patience_counter += 1
+
+        if patience_counter > patience:
+            print(f"Early stopping at iteration {iteration}, best total error: {best_error}")
             break
 
         if total_error < 1e-6:  # Convergence criterion
