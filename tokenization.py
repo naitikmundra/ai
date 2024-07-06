@@ -102,18 +102,24 @@ with open('sentences.txt', 'r') as file:
 
 # Remove newline characters from each line
 sentences = [line.strip() for line in lines]
-# Example sentences and labels
-sentences = ["Hello", "How are you?", "good dog!", "weather is nice"]
-# Labels: 10 means greeting, 20 means question, 30 means appreciation, 40 means statement
-labels = [1, 2, 3, 4]
+# Open the text file in read mode
+with open('labels.txt', 'r') as file:
+    # Read the lines of the file and create a list
+    labels = file.readlines()
+# Remove newline characters from each line
+labels = [int(line.strip()) for line in labels]
+
 
 # Train the model
 weights, bias, min_label, max_label = train(sentences, labels)
 
+
 # Print the final weights and bias
 print(f'Final Weights: {weights}, Final Bias: {bias}')
 
+
+
 # Predict on new sentences
-new_sentence = "different"
+new_sentence = "good dog!"
 prediction = predict(new_sentence, weights, bias, min_label, max_label)
 print(f'Prediction for "{new_sentence}": {prediction}')
