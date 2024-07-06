@@ -5,6 +5,7 @@ list_of_words = []
 list_of_words.append("<OOV>")
 assigned_numbers = {}
 
+#Convert sentences to numbers during training
 def tokenize(sentences):
     global list_of_words, assigned_numbers
     for sentence in sentences:
@@ -96,7 +97,7 @@ def predict(sentence, weights, bias, min_label, max_label):
 
 
 # Open the text file in read mode
-with open('sentences.txt', 'r') as file:
+with open('sentences.txt', 'r', encoding='utf-8') as file:
     # Read the lines of the file and create a list
     lines = file.readlines()
 
@@ -119,7 +120,7 @@ print(f'Final Weights: {weights}, Final Bias: {bias}')
 
 
 
-# Predict on new sentences
-new_sentence = "good dog!"
-prediction = predict(new_sentence, weights, bias, min_label, max_label)
-print(f'Prediction for "{new_sentence}": {prediction}')
+while true:
+    new_sentence = input("Enter a sentence: ")
+    prediction = predict(new_sentence, weights, bias, min_label, max_label)
+    print(f'Prediction for "{new_sentence}": {prediction}')
