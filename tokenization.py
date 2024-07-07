@@ -5,7 +5,7 @@ from sklearn.preprocessing import StandardScaler
 list_of_words = ["<OOV>"]
 assigned_numbers = {}
 
-# Convert sentences to numbers during training
+# Convert sentences to numbers during training and assign numbers to them
 def tokenize(sentences):
     global list_of_words, assigned_numbers
     for sentence in sentences:
@@ -22,7 +22,6 @@ def tokenize(sentences):
         tokenized.append(tokenized_sentence)
     max_length = len(max(tokenized, key=len))
     tokenized = [array + [0] * (max_length - len(array)) for array in tokenized]
-
     return np.array(tokenized)
 
 def tokenize_prediction(sentence):
@@ -39,7 +38,7 @@ def normalize_labels(labels):
 def denormalize_label(label, min_label, max_label):
     return label * (max_label - min_label) + min_label
 
-def train(sentences, labels, learning_rate=0.00001, max_iterations=1000, batch_size=32, patience=10):
+def train(sentences, labels, learning_rate=0.00001, max_iterations=300, batch_size=32, patience=10):
     sentences = tokenize(sentences)
     labels, min_label, max_label = normalize_labels(np.array(labels))
     num_features = sentences.shape[1]
@@ -110,21 +109,22 @@ def train(sentences, labels, learning_rate=0.00001, max_iterations=1000, batch_s
 
         if total_error < best_error:
             best_error = total_error
+            current_best = [weights, bias, min_label, max_label, scaler, best_error]
+
             patience_counter = 0
         else:
             patience_counter += 1
-
         if patience_counter > patience:
-            print(f"Early stopping at iteration {iteration}, best total error: {best_error}")
-            break
-
+            #print(f"Early stopping at iteration {iteration}, best total error: {best_error}")
+            pass
         if total_error < 1e-6:  # Convergence criterion
             break
 
         if iteration % 100 == 0:
+            
             print(f'Iteration {iteration}, Total Error: {total_error}')
-
-    return weights, bias, min_label, max_label, scaler
+            print(current_best[5])
+    return current_best[0], current_best[1], current_best[2], current_best[3], current_best[4]
 
 def predict(sentence, weights, bias, min_label, max_label, scaler):
     tokenized_sentence = tokenize_prediction(sentence)
